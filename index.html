@@ -1,0 +1,265 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>bluedot</title>
+    <meta charset="utf-8">
+    <style type="text/css">
+     html {
+        height: 100%;
+      }
+        body {
+        background: rgb(60,60,60);
+        margin: 0;
+        padding: 0;
+        color: #ffffff;
+        font-family: sans-serif;
+        font-size: 13px;
+        line-height: 20px;
+        height: 100%;
+    }
+    
+    #container {
+        color: #ffffff;
+        font: 20px Arial, sans-serif;
+        width: 100%;
+        height: 100%;
+    }
+
+    #detail {
+        border: 2px solid #ffffff;
+        width: 200px;
+        height: 400px;
+        position: absolute;
+        right: 100px;
+        top: 100px;
+    }
+    #detail_name {
+        border-bottom: 2px solid #ffffff;
+        padding: 16px;
+        text-align: center;
+        font-size: 2.0em;
+    }
+    #detail_props {
+        padding: 16px;
+        text-align: left;
+    }
+    </style>
+  </head>
+  <body>
+
+  <div id="container"></div>
+  
+  <div id="detail">
+    <div id="detail_name">FOOBAR</div>
+    <div id="detail_props"></div>
+  </div>
+  <!-- <script type="text/javascript" src="./third-party/Detector.js"></script> -->
+  <script type="text/javascript" src="./third-party/three.min.js"></script>
+  <script type="text/javascript" src="./third-party/tween.min.js"></script>
+  <script type="text/javascript" src="./third-party/latlon-geohash.js"></script>
+  <script type="text/javascript" src="./third-party/papaparse.min.js"></script>
+
+  <script type="text/javascript" src="./bluedot.js"></script>
+  
+  <script type="text/javascript">
+      var container = document.getElementById('container');
+      var detail_name = document.getElementById('detail_name');
+      var detail_props = document.getElementById('detail_props');
+
+      var globe = new SWIFT.Bluedot(container);
+      var anim_loop = true;
+
+      console.log('GLOBE');
+      console.log(globe);
+
+      var data;
+      
+      // var data = [
+      //       {
+      //           "name": "Oakland",
+      //           "lat": 37.8076267,
+      //           "lng": -122.2344349,
+      //           "size": .003
+      //       }
+      //       ,
+      //       {
+      //           "name": "El Cerrito",
+      //           "lat": 37.9180571,
+      //           "lng": -122.3198401,
+      //           "size": .003                
+      //       }
+      //       ,
+      //       {
+      //           "name": "San Diego",
+      //           "lat": 32.8242404,
+      //           "lng": -117.3891602,
+      //           "size": .003                
+      //       }
+      //       ,
+      //       {
+      //           "name": "New York",
+      //           "lat": 40.6976701,
+      //           "lng": -74.2598646,
+      //           "size": .003                
+      //       },
+      //       {
+      //           "name": "Phoenix",
+      //           "lat": 33.6050991,
+      //           "lng": -112.405231,
+      //           "size": .003
+      //       },
+      //       {
+      //           "name": "Cheyenne Mountain",
+      //           "lat": 38.7510879,
+      //           "lng": -104.8609231,
+      //           "size": .003
+      //       },
+      //       {
+      //           "name": "Sydney",
+      //           "lat": -33.8679058,
+      //           "lng": 151.2012372,
+      //           "size": .003
+      //       },
+      //       {
+      //           "name": "Hanalei",
+      //           "lat":22.2094845,
+      //           "lng":-159.5065227,
+      //           "size": .003
+      //       },
+      //       {
+      //           "name": "Los Angeles",
+      //           "lat": 34.0201613,
+      //           "lng":-118.6919138,
+      //           "size": .003
+      //       },
+      //       {
+      //           "name": "Taipei",
+      //           // 25.0169639,121.2261861,128967
+      //           "geohash": "wsqnqd4nqu5fqxv1chcshc",
+      //           "size": .003
+      //       }
+      //   ];
+
+      // for ( x in data) {
+      //     if ( ! data[x].geohash) {
+      //         data[x].geohash = Geohash.encode(data[x].lat, data[x].lng);
+      //     }
+      //     if ( ! data[x].lat) {
+      //         var p = Geohash.decode(data[x].geohash);
+      //         data[x].lat = p.lat;
+      //         data[x].lng = p.lon;
+      //     }
+      // }
+      var index = 0;
+
+      var csv_config = {
+        header: true,
+        download: true,
+        complete: function(results, file) {
+                     console.log("Parsing complete:", results, file);
+                     //window.data = results;
+                     data = results.data;
+                     for ( x in data ) {
+                      data[x]['lat'] = parseFloat(data[x].LAT);
+                      data[x].lng = parseFloat(data[x].LON);
+                      data[x].size = .003;
+                     }
+                     console.log(data);
+
+                     globe.addData(data);
+                     globe.createPoints();
+
+                     globe.animate();
+                    // animation loop
+
+                    function next_move() {
+                        //globe.camera_move(37.8076267, -122.2344349);
+                        if ( data[index].Ident ) {
+                          globe.camera_move(data[index].lat, data[index].lng, index);
+
+                          detail_name.innerText = data[index].Ident;
+                          var s = "";
+                          for (x in data[index]) {
+                            if (x) {
+                              s += x + ' : ' + data[index][x] + '\n';
+                            }
+                          }
+                          detail_props.innerText = s;
+                        }
+                        index++;
+                        index = index % data.length;
+                    }
+
+                    var anim_interval = setInterval(next_move, 3000);
+
+                  }
+      }
+
+      Papa.parse('CORS.Geohash.csv', csv_config);
+
+
+
+      // xhr = new XMLHttpRequest();
+      // xhr.open('GET', 'CORS_Geohash.csv', true);
+      // xhr.onreadystatechange = function(e) {
+      //   if (xhr.readyState === 4) {
+      //     if (xhr.status === 200) {
+
+      //       // var data = JSON.parse(xhr.resp nseText);
+      //       var csv = xhr.responseText;
+
+
+      //       // window.data = data;
+      //       for (i=0;i<data.length;i++) {
+
+      //       }
+
+      //       globe.addData(jdata);
+      //       globe.createPoints();
+      //       globe.animate();
+      //       //document.body.style.backgroundImage = 'none'; // remove loading
+          
+      //     }
+      //   }
+      // };
+      // xhr.send(null);
+    
+
+
+
+
+
+
+
+      window.addEventListener('keydown', onWindowKeyDown, false);
+
+      function onWindowKeyDown(event) {
+          switch (event.keyCode) {
+            case 32: //space
+              anim_loop = !anim_loop;
+              console.log(anim_interval, anim_loop);
+              if ( anim_loop ) {
+                  //clearInterval(anim_interval);
+                  anim_interval = setInterval(next_move, 3000);
+              } else {
+                  clearInterval(anim_interval);
+              }
+              event.preventDefault();
+              break;
+            case 39: // right arrow
+              index++;
+              index = index % data.length;
+              event.preventDefault();
+              break;
+            case 37: // left arrow
+              index--;
+              index = index % data.length;
+              event.preventDefault();
+              break;
+
+          }
+    }
+
+  </script>
+</body>
+</html>
